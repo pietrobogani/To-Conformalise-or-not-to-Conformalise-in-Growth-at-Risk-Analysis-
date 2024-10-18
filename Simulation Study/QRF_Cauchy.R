@@ -20,6 +20,7 @@ library(ggplot2)
 #Load correctly the file "functions.R", modifying the path
 source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
 
+# File to save results of the simulation.
 file_path <- "QRF_Cauchy_Results.xlsx"
 
 # Check if the file exists

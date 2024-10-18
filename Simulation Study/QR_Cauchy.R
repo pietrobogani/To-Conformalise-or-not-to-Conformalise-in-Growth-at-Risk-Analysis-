@@ -17,9 +17,10 @@ library(quantregForest)
 library(openxlsx)
 library(ggplot2)
 
-#Load correctly the file "functions.R", modifying the path
+# Load correctly the file "functions.R", modifying the path
 source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
 
+# File to save results of the simulation.
 file_path <- "QR_Cauchy_Results.xlsx"
 
 # Check if the file exists
@@ -117,8 +118,8 @@ count <- 2  # Row counter for writing results to Excel
 for (n in vector_n){
 
  # Setup parallel cluster
- cl <- makeCluster(detectCores() - 1) # Leave one core free to avoid freezing your system
- clusterExport(cl, varlist=c("run_simulation","n")) # Export the simulation function to each cluster node
+ cl <- makeCluster(detectCores() - 1) 
+ clusterExport(cl, varlist=c("run_simulation","n")) 
  clusterEvalQ(cl, { 
    library(readxl)
    library(quantreg)
@@ -127,14 +128,10 @@ for (n in vector_n){
  }
  ) 
 
- # Run simulations in parallel
  results <- parLapply(cl, seeds, function(seed) {
   set.seed(seed)
   run_simulation(n)
  })
-
-
-# Stop the cluster
 stopCluster(cl)
 
 # Extract results
@@ -155,11 +152,9 @@ average_coverageCQRAR2 <- compute_average_coverage(coveragetotCQRAR2, QQ)
 resultsPitSTQRAR2 <- compute_results(average_coverageQRAR2, n2*n3, QQ)
 resultsPitSTCQRAR2 <- compute_results(average_coverageCQRAR2, n2*n3, QQ)
 
-#------------ Write Results in the excel file
+# Write Results in the excel file
 
 wb <- loadWorkbook(file_path)
-
-# Access the worksheet 
 sheet <- "Data"
 
 #In the first column, write the parameters of the simulation:
@@ -188,7 +183,6 @@ count <- count + 3 #So to leave an empty row
 
 #------------- PLOT CALIBRATION CURVES OF QR and CQR 
 
-# Create data frames for both datasets
 df1 <- data.frame(
   Quantile = rev(resultsPitSTCQRAR2$Quantile),
   EmpiricalCoverage = rev(resultsPitSTCQRAR2$EmpiricalCoverage),
@@ -201,24 +195,21 @@ df2 <- data.frame(
   Group = "QR"
 )
 
-# Combine the data frames
 df <- bind_rows(df1, df2)
 
-# Define the colors
 cqr_colors <- "#0000FF"
 qr_colors <- "#FF0000"
-# Define the legend position based on the value of n - 3
 legend_position <- if ((n - 3) == 98) c(0.85, 0.15) else "none"
 
 p <- ggplot(df, aes(x = Quantile, y = EmpiricalCoverage, color = Group)) +
-  geom_step(direction = "vh", size = 1) + # Add staircase lines
-  geom_point(size = 3) + # Add points
-  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black", size = 1) + # Add diagonal line
-  scale_color_manual(values = c("CQR QR" = cqr_colors, "QR" = qr_colors)) + # Manual color scale
-  labs(title = paste("n =", n - 3), x = "Quantile Levels", y = "Empirical Coverage") + # Add labels and title
+  geom_step(direction = "vh", size = 1) + 
+  geom_point(size = 3) + 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black", size = 1) + 
+  scale_color_manual(values = c("CQR QR" = cqr_colors, "QR" = qr_colors)) + 
+  labs(title = paste("n =", n - 3), x = "Quantile Levels", y = "Empirical Coverage") + 
   theme_minimal() +
   theme(
-    legend.position = legend_position, # Set legend position based on condition
+    legend.position = legend_position,
     legend.title = element_blank(),
     text = element_text(size = 15),
     plot.title = element_text(hjust = 0.5),
@@ -226,9 +217,7 @@ p <- ggplot(df, aes(x = Quantile, y = EmpiricalCoverage, color = Group)) +
     axis.title.y = element_text(hjust = 0.5)
   )
 
-# Print the plot
 print(p)
-# Save the plot as a PDF file
 ggsave(filename = paste0("QR_Cauchy_n", n - 3, ".pdf"), plot = p, width = 7, height = 5)
 }
 

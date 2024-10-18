@@ -19,7 +19,9 @@ library(openxlsx)
 #Load correctly the file "functions.R", modifying the path
 source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
 
+# File to save results of the simulation.
 file_path <- "QR_Nearly_Root_Results.xlsx"
+
 # Check if the file exists
 if (!file.exists(file_path)) {
   # Create a new workbook
