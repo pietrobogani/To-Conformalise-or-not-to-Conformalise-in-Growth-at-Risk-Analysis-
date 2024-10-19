@@ -21,7 +21,7 @@ library(quantregForest)
 library(openxlsx)
 
 #Load correctly the file "functions.R", modifying the path
-source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
+source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
 
 # File to save results of the simulation.
 file_path <- "QRF_Exogeneus_Results.xlsx"
@@ -175,7 +175,7 @@ for (n in vector_n){
       library(quantreg)
       library(quantregForest)
       library(mvtnorm)
-      source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
+      source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
     }) # Load required libraries in each cluster node, repeat as necessary for other libraries
     
     # Run simulations in parallel
@@ -331,4 +331,3 @@ for (n in vector_n){
     ggsave(filename = paste0("QRF_Exogeneus_n", n - 3,"_", p_n, ".pdf"), plot = p, width = 7, height = 5)
   }
 }
-

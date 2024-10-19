@@ -17,7 +17,7 @@ library(quantregForest)
 library(openxlsx)
 
 #Load correctly the file "functions.R", modifying the path
-source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
+source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
 
 # File to save results of the simulation.
 file_path <- "QRF_Nearly_Root_Results.xlsx"
@@ -119,7 +119,7 @@ for (n in vector_n){
       library(readxl)
       library(quantreg)
       library(quantregForest)
-      source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
+      source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
     }) # Load required libraries in each cluster node, repeat as necessary for other libraries
     
     # Run simulations in parallel

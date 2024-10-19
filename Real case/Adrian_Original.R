@@ -18,15 +18,12 @@ library(dplyr)
 rm(list = ls())
 
 # Set forecast horizon (run script separately for h = 1 and h = 4)
-h <- 4
+h <- 1
 
-loadsavedresults = FALSE; # If I have run the code already and I want to load results, stored in ResOOS_H
-
-#par(mfrow = c(1, 1))  # Reset plot window to single pane
+loadsavedresults = FALSE; # TRUE If I have run the code already and I want to load results, stored in ResOOS_H
 
 # Load data and functions
-source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/Real case/QuantilesInterpolationfaster3.R")
-source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/Real case/PITtest.R")
+source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
 file_path <- "DataVulnerabilityAppendix.xls" # Data containing GDP growth and NFCI
 
 # Read the file and  Filter data for 1973Q1-2015Q4
@@ -43,12 +40,6 @@ QQ <- seq(0.05, 0.95, by = 0.05) # Vector of quantiles I want to predict
 deltaYY <- 0.1
 YY <- seq(-20, 20, by = deltaYY)
 jtFirstOOS <- which(lubridate::year(data$Time) == 1993 & lubridate::month(data$Time) == 1)
-indices <- which(QQ %in% c(0.05, 0.25, 0.5, 0.75, 0.95))
-jq05 <- indices[1]
-jq25 <- indices[2]
-jq50 <- indices[3]
-jq75 <- 15 
-jq95 <- 19 
 
 # Construct average growth rates
 y <- X$A191RL1Q225SBEA
@@ -66,7 +57,6 @@ ZGDPonly <- cbind(1, y)
 if (loadsavedresults == FALSE) {
 
 {
-# Get length of Time and QQ/YY
 len_time <- length(data$Time)
 len_qq <- length(QQ)
 len_yy <- length(YY)
@@ -75,7 +65,6 @@ len_yy <- length(YY)
 YQ_NaNs <- matrix(NA, len_time, len_qq)
 YQ_OOS <- YQ_NaNs
 YQGDPonly_OOS <- YQ_NaNs
-YQunc_OOS <- YQ_NaNs
 
 # Probability integral transforms
 Pit_NaNs <- rep(NA, len_time)
@@ -105,12 +94,12 @@ for (jt in jtFirstOOS:(length(Time) - h)) {
   # Fit skewed-t distribution for quantile regression with NFCI and GDP, out-of-sample
   qqTarg <- YQ_OOS[jt + h, ]
   params <- QuantilesInterpolation(qqTarg, QQ)
-  PitST_OOS[jt + h] <- pst(YhRealized, params$lc, params$sc, params$sh, params$df) # is the probability to observe a value < of YhRealized in this distribution 
+  PitST_OOS[jt + h] <- sn::pst(YhRealized, params$lc, params$sc, params$sh, params$df) # is the probability to observe a value < of YhRealized in this distribution 
     
   # Fit skewed-t distribution for quantile regression with GDP only, out-of-sample
   qqTarg <- YQGDPonly_OOS[jt + h, ]
   params_GDPonly <- QuantilesInterpolation(qqTarg, QQ)
-  PitSTGDPonly_OOS[jt + h] <- pst(YhRealized, params_GDPonly$lc, params_GDPonly$sc, params_GDPonly$sh, params_GDPonly$df) # is the probability to observe a value < of YhRealized in this distribution 
+  PitSTGDPonly_OOS[jt + h] <- sn::pst(YhRealized, params_GDPonly$lc, params_GDPonly$sc, params_GDPonly$sh, params_GDPonly$df) # is the probability to observe a value < of YhRealized in this distribution 
     
 
   }

@@ -95,7 +95,7 @@ qCQR_opposite <- function(x0,y0,x1,y1,x_test,QQ) {
   # y0: A vector of the target variable for the training (I1)
   # x1: A matrix with covariates for the calibration, and a first column full of 1 (I2)
   # y1: A vector of the target variable for the calibration (I2)
-  # x_test: A matrix with covariates for the evaluation
+  # x_test: A matrix with covariates for the evaluation, and a first column full of 1
   # QQ: A vector of quantile levels (e.g., 0.1, 0.5, 0.9) for which quantile predictions will be made (alpha)
   
 
@@ -138,19 +138,15 @@ qCQRF_opposite <- function(x0,y0,x1,y1,x_test,QQ) {
   
   #This is the function to apply CQR QRF algorithm computing a Prediction interval of the form: [B, + Inf)
   
-  # x0: A matrix with covariates for the training, and a first column full of 1 (I1)
+  # x0: A matrix with covariates for the training (I1)
   # y0: A vector of the target variable for the training (I1)
-  # x1: A matrix with covariates for the calibration, and a first column full of 1 (I2)
+  # x1: A matrix with covariates for the calibration (I2)
   # y1: A vector of the target variable for the calibration (I2)
   # x_test: A matrix with covariates for the evaluation
   # QQ: A vector of quantile levels (e.g., 0.1, 0.5, 0.9) for which quantile predictions will be made (alpha)
   
   # CQuant_OOS: the output is a matrix with quantile predictions, one row for each test point and one column for each 
   #             quantile level
-  
-  x0 <- as.matrix(x0)
-  x1 <- as.matrix(x1)
-  x_test <- as.matrix(x_test)
   
   qrf_model <- quantregForest(x = x0, y = y0)
   CQuant_OOS <- matrix(0, nrow(x_test), length(QQ))
@@ -159,7 +155,7 @@ qCQRF_opposite <- function(x0,y0,x1,y1,x_test,QQ) {
   
   for( jq in 1:length(QQ) ) {
     
-    Q_low[1:nrow(x1), jq] <- predict(qrf_model, newdata = as.matrix(x1), what = (QQ[jq]))
+    Q_low[1:nrow(x1), jq] <- predict(qrf_model, newdata = x1, what = (QQ[jq]))
     
     Q_high[1 : nrow(x1), jq] <- Inf
     
@@ -298,6 +294,83 @@ compute_results <- function(average_coverage, n, QQ){
   resultsPit$IsWithinCI <- mapply(is_within_ci, resultsPit$Quantile, resultsPit$CI_Lower, resultsPit$CI_Upper)
   
   return (resultsPit)
+}
+
+
+#----- Auxiliar functions from the original work of Adrian et al., necessary to replicate their results
+
+PITtest <- function(PIT, rvec){
+  z <- PIT[!is.na(PIT)]
+  P <- length(z)
+  cumcumz <- matrix(nrow = P, ncol = length(rvec))
+  
+  for(r in 1:length(rvec)){
+    cumcumz[,r] <- (z < rvec[r]) - rvec[r]
+  }
+  
+  v <- colSums(cumcumz) / sqrt(P)
+  
+  Qv <- v^2
+  Qvabs <- abs(v)
+  
+  z_ecdf <- numeric(length(rvec))
+  for(r in 1:length(rvec)){
+    z_ecdf[r] <- mean(z < rvec[r])
+  }
+  
+  return(z_ecdf)
+}
+
+QuantilesInterpolation <- function(qqTarg, QQ) {
+  library(parallel)
+  library(sn)
+  
+  # Set bounds for optimization
+  LB <- c(-20, 0, -30)
+  UB <- c(20, 50, 30)
+  
+  # Locate target quantiles
+  jq50 <- which.min(abs(QQ - 0.50))
+  jq25 <- which.min(abs(QQ - 0.25))
+  jq75 <- which.min(abs(QQ - 0.75))
+  jq05 <- which.min(abs(QQ - 0.05))
+  jq95 <- which.min(abs(QQ - 0.95))
+  
+  # Set initial conditions for optimization (no option to provide them in input)
+  iqn <- qnorm(0.75) - qnorm(0.25)
+  lc0 <- qqTarg[jq50]
+  sc0 <- (qqTarg[jq75] - qqTarg[jq25]) / iqn
+  sh0 <- 0
+  
+  
+  Select <- c(jq05, jq25, jq75, jq95)
+  
+  cl <- makeCluster(detectCores() - 1) # Use one less than the total number of cores
+  clusterEvalQ(cl, { 
+    library(sn)
+  }) 
+  
+  # Function to optimize in parallel for each degree of freedom
+  optimize_fn_nlminb <- function(df,lc0, sc0, sh0, qqTarg, QQ, jq05, jq25, jq75, jq95) {
+    objective_function <- function(p) {
+      sum((qqTarg[c(jq05, jq25, jq75, jq95)] - qst(QQ[c(jq05, jq25, jq75, jq95)], xi=p[1], omega=p[2], alpha=p[3], nu=df))^2)
+    }
+    result <- nlminb(start = c(lc0, sc0, sh0), objective_function, lower = c(-20, 0, -30), upper = c(20, 50, 30))
+    return(list(par = result$par, value = result$objective))
+  }
+  
+  # Execute in parallel
+  results <- parLapply(cl, 1:30, optimize_fn_nlminb,lc0, sc0, sh0, qqTarg, QQ, jq05, jq25, jq75, jq95)
+  stopCluster(cl)
+  
+  # Extract results
+  par <- matrix(unlist(lapply(results, function(x) x$par)), ncol = 3, byrow = TRUE)
+  ssq <- sapply(results, function(x) x$value)
+  
+  # Find the best fit
+  best_df <- which.min(ssq)
+  
+  list(lc = par[best_df, 1], sc = par[best_df, 2], sh = par[best_df, 3], df = best_df, ssq = ssq[best_df])
 }
 
 

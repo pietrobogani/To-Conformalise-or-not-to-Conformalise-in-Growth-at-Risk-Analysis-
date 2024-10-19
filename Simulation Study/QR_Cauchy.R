@@ -18,23 +18,16 @@ library(openxlsx)
 library(ggplot2)
 
 # Load correctly the file "functions.R", modifying the path
-source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
+source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
 
 # File to save results of the simulation.
 file_path <- "QR_Cauchy_Results.xlsx"
 
-# Check if the file exists
 if (!file.exists(file_path)) {
-  # Create a new workbook
   wb <- createWorkbook()
-  
-  # Add a worksheet named "Data"
   addWorksheet(wb, "Data")
-  
-  # Save the workbook (this creates the file)
-  saveWorkbook(wb, file_path, overwrite = TRUE)
+    saveWorkbook(wb, file_path, overwrite = TRUE)
 } else {
-  # Load the existing workbook
   wb <- loadWorkbook(file_path)
 }
 
@@ -124,7 +117,7 @@ for (n in vector_n){
    library(readxl)
    library(quantreg)
    library(quantregForest)
-   source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
+   source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
  }
  ) 
 

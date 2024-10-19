@@ -17,23 +17,17 @@ library(quantregForest)
 library(openxlsx)
 
 #Load correctly the file "functions.R", modifying the path
-source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
+source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
 
 # File to save results of the simulation.
 file_path <- "QR_Nearly_Root_Results.xlsx"
 
-# Check if the file exists
 if (!file.exists(file_path)) {
-  # Create a new workbook
   wb <- createWorkbook()
-  
-  # Add a worksheet named "Data"
   addWorksheet(wb, "Data")
-  
-  # Save the workbook (this creates the file)
   saveWorkbook(wb, file_path, overwrite = TRUE)
+  
 } else {
-  # Load the existing workbook
   wb <- loadWorkbook(file_path)
 }
 
@@ -106,22 +100,21 @@ vector_phi <- c(0.95, 1, 1.05)
 QQ <- c(seq(0.05, 0.95, by = 0.05),0.99) #Quantiles vector I want to estimate = alpha
 n2 <- 100  # Test set size
 n3 <- 100  # Number of simulations
-seeds <- 1:n3  # Vector of seeds, one per simulation
+seeds <- 1:n3  
 count <- 2  # Row counter for writing results to Excel
 
 
 for (n in vector_n){
   for(phi in vector_phi){
 
-  # Setup parallel cluster
-  cl <- makeCluster(detectCores() - 1) # Leave one core free to avoid freezing your system
-  clusterExport(cl, varlist=c("run_simulation","n","phi")) # Export the simulation function to each cluster node
+  cl <- makeCluster(detectCores() - 1) 
+  clusterExport(cl, varlist=c("run_simulation","n","phi")) 
   clusterEvalQ(cl, { 
     library(readxl)
     library(quantreg)
     library(quantregForest)
-    source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/Thesis-Code/functions.R")
-  }) # Load required libraries in each cluster node, repeat as necessary for other libraries
+    source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
+  }) 
 
   # Run simulations in parallel
   results <- parLapply(cl, seeds, function(seed) {
@@ -129,7 +122,6 @@ for (n in vector_n){
     run_simulation(n, phi)
   })
   
-  # Stop the cluster
   stopCluster(cl)
 
   # Extract results
@@ -143,18 +135,17 @@ for (n in vector_n){
     index <- index + 1
   }
 
-  average_coverageQRAR1 <- compute_average_coverage(coveragetotQRAR1, QQ) #vector of length = length(QQ)
-  average_coverageCQRAR1 <- compute_average_coverage(coveragetotCQRAR1, QQ) #vector of length = length(QQ)
+  average_coverageQRAR1 <- compute_average_coverage(coveragetotQRAR1, QQ) 
+  average_coverageCQRAR1 <- compute_average_coverage(coveragetotCQRAR1, QQ) 
 
   resultsPitSTQRAR1 <- compute_results(average_coverageQRAR1, n2*n3, QQ)
   resultsPitSTCQRAR1 <- compute_results(average_coverageCQRAR1, n2*n3, QQ)
 
+  
 #------------ Write Results in the excel file
-
 
   wb <- loadWorkbook(file_path)
 
-  # Access the worksheet 
   sheet <- "Data"
 
   #In the first column, write the parameters of the simulation:
@@ -194,14 +185,11 @@ for (n in vector_n){
     Group = "QR"
   )
   
-  # Combine the data frames
   df <- bind_rows(df1, df2)
   
-  # Define the colors
   cqr_colors <- "#0000FF"
   qr_colors <- "#FF0000"
   
-  # Define the legend position based on the value of n - 3
   legend_position <- if (n - 3 == 98) {
     c(0.85, 0.15)
   } else {
@@ -209,14 +197,14 @@ for (n in vector_n){
   }
   
   p <- ggplot(df, aes(x = Quantile, y = EmpiricalCoverage, color = Group)) +
-    geom_step(direction = "vh", linewidth = 1) + # Use `linewidth` instead of `size` for lines
-    geom_point(size = 3) + # Add points
-    geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black", linewidth = 1) + # Use `linewidth` for the diagonal line
-    scale_color_manual(values = c("CQR QR" = cqr_colors, "QR" = qr_colors)) + # Manual color scale
-    labs(title = paste("n =", n - 3, "phi =", phi), x = "Quantile Levels", y = "Empirical Coverage") + # Add labels and title
+    geom_step(direction = "vh", linewidth = 1) + 
+    geom_point(size = 3) + 
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black", linewidth = 1) + 
+    scale_color_manual(values = c("CQR QR" = cqr_colors, "QR" = qr_colors)) + 
+    labs(title = paste("n =", n - 3, "phi =", phi), x = "Quantile Levels", y = "Empirical Coverage") + 
     theme_minimal() +
     theme(
-      legend.position = legend_position, # Set legend position based on condition
+      legend.position = legend_position, 
       legend.title = element_blank(),
       text = element_text(size = 15),
       plot.title = element_text(hjust = 0.5),
@@ -224,7 +212,6 @@ for (n in vector_n){
       axis.title.y = element_text(hjust = 0.5)
     )
   
-  # Print the plot
   print(p)
   ggsave(filename = paste0("QR_Nearly_Root_n", n - 3,"_", phi, ".pdf"), plot = p, width = 7, height = 5)
   
