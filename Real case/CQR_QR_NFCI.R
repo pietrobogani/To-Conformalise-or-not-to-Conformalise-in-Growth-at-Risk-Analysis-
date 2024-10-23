@@ -16,11 +16,11 @@ rm(list = ls())
 # Set forecast horizon
 h <- 1
 
-loadsavedresults = FALSE; # TRUE If I have run the code already and I want to load results, stored in ResOOS_CQR_QR_H
+loadsavedresults = TRUE; # TRUE If I have run the code already and I want to load results, stored in ResOOS_CQR_QR_H
 
 # Load data and functions
 source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
-file_path <- "DataVulnerabilityAppendix.xls"
+file_path <- "Data_Original.xls"
 
 # Read the file and  Filter data for 1973Q1-2015Q4
 data <- read_excel(file_path)
@@ -46,7 +46,7 @@ if (h>1){
   Yh[1:(h-1)] <- NA
 }
 
-#Construct matrices of regressors
+# Construct matrices of regressors
 Z <- as.matrix(cbind(1, X[,2], y))
 ZGDPonly <- cbind(1, y)
 
@@ -86,7 +86,7 @@ if (loadsavedresults == FALSE) {
       cat(sprintf("Now computing the real-time predictive densities in %d", year(Time[jt])), "\n")
     }
       
-    #------- Conformalized Quantile Regression with both NFCI and GDP, out-of-sample
+    #------- CQR QR with both NFCI and GDP, out-of-sample
         
     # Split creating I1 and I2
     full_length <- length(Yh[(h + 1):jt])
@@ -180,5 +180,29 @@ p <- ggplot(df, aes(x = Quantile, y = EmpiricalCoverage, color = Group)) +
   )
 
 # Print the plot
-print(p)
+#print(p)
 
+
+
+
+
+#------------------------------
+
+# Plot quantile estimates and quantile levels 
+len <- (jtFirstOOS+h):length(Time)
+Time_Pred <- Time[len]
+Quant_Pred <- YQ_OOSCO[len,]
+Real <- Yh[len]
+plot(Time_Pred, Quant_Pred[,3], type = 'l', col = 'blue', xlab = 'Time', ylab = 'QQ', xlim = range(Time_Pred),ylim = c(-20,20))
+lines(Time_Pred, Quant_Pred[,48], type = 'l', col = 'blue')
+lines(Time_Pred, Quant_Pred[,93], type = 'l', col = 'blue')
+lines(Time_Pred, Real, type = 'l', col = 'red', lty = 2)
+
+legend("bottomleft", 
+       legend = c("Realization", "5th Percentile CQR QR NFCI", "50th Percentile  CQR QR NFCI", "95th Percentile  CQR QR NFCI"), 
+       col = c("red", "blue", "blue", "blue"), 
+       lty = c(2, 1, 1, 1), 
+       bty = "n",
+       cex = 0.8)  # `bty = "n"` removes the box around the legend
+
+ggsave(filename = paste0("CQR_QR_Estimates_Plot_H", h,".pdf"), plot = p, width = 7, height = 5)

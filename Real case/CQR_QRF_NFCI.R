@@ -14,9 +14,9 @@ library(parallel)
 rm(list = ls())
 
 # Set forecast horizon
-h <- 4
+h <- 1
 
-loadsavedresults = FALSE; # TRUE If I have run the code already and I want to load results, stored in ResOOS_CQR_QRF_H
+loadsavedresults = TRUE; # TRUE If I have run the code already and I want to load results, stored in ResOOS_CQR_QRF_H
 
 # Load data and functions
 source("C:/Users/Pietro/Desktop/Pietro/Politecnico/Tesi/To-Conformalise-or-not-to-Conformalise-in-Growth-at-Risk-Analysis/functions.R")
@@ -182,3 +182,23 @@ p <- ggplot(df, aes(x = Quantile, y = EmpiricalCoverage, color = Group)) +
 # Print the plot
 print(p)
 
+
+
+# Plot quantile estimates and quantile levels 
+len <- (jtFirstOOS+h):length(Time)
+Time_Pred <- Time[len]
+Quant_Pred <- YQ_OOSCO[len,]
+Real <- Yh[len]
+plot(Time_Pred, Quant_Pred[,3], type = 'l', col = 'blue', xlab = 'Time', ylab = 'QQ', xlim = range(Time_Pred),ylim = c(-20,20))
+lines(Time_Pred, Quant_Pred[,48], type = 'l', col = 'blue')
+lines(Time_Pred, Quant_Pred[,97], type = 'l', col = 'blue')
+lines(Time_Pred, Real, type = 'l', col = 'red', lty = 2)
+
+legend("bottomleft", 
+       legend = c("Realization", "5th Percentile CQR NFCI", "50th Percentile  CQR QRF NFCI", "95th Percentile  CQR QRF NFCI"), 
+       col = c("red", "blue", "blue", "blue"), 
+       lty = c(2, 1, 1, 1), 
+       bty = "n",
+       cex = 0.8)  # `bty = "n"` removes the box around the legend
+
+ggsave(filename = paste0("CQR_QRF_Estimates_Plot", h,".pdf"), plot = p, width = 7, height = 5)
